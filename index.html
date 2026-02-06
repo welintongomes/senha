@@ -3,723 +3,1194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Universal</title>
+    <title>Cofre de Senhas</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@600;800&display=swap');
+        
+        :root {
+            --bg-dark: #0a0e27;
+            --bg-mid: #151b3d;
+            --bg-light: #1f2949;
+            --accent-cyan: #00f0ff;
+            --accent-purple: #bf00ff;
+            --accent-green: #00ff88;
+            --text-primary: #e8f4f8;
+            --text-secondary: #8b9fc9;
+            --border: rgba(0, 240, 255, 0.2);
+            --shadow: 0 8px 32px rgba(0, 240, 255, 0.1);
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-dark);
+            color: var(--text-primary);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
         }
-
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(191, 0, 255, 0.1) 0%, transparent 50%);
+            animation: drift 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(5deg); }
+            66% { transform: translate(-20px, 20px) rotate(-5deg); }
+        }
+        
         .container {
             max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            width: 100%;
+            position: relative;
+            z-index: 1;
         }
-
+        
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
             text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease-out;
         }
-
-        h1 {
-            font-size: 2em;
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
+            letter-spacing: -2px;
         }
-
-        .tabs {
-            display: flex;
-            background: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
         }
-
-        .tab {
-            flex: 1;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            border: none;
-            background: transparent;
-            font-size: 16px;
+        
+        .lock-screen, .vault-screen {
+            background: var(--bg-mid);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
         }
-
-        .tab:hover {
-            background: #e9ecef;
+        
+        .lock-screen {
+            animation: fadeIn 0.6s ease-out 0.2s backwards;
         }
-
-        .tab.active {
-            background: white;
-            color: #667eea;
-            border-bottom: 3px solid #667eea;
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
-
-        .content {
-            padding: 30px;
-        }
-
-        .tab-content {
+        
+        .vault-screen {
             display: none;
         }
-
-        .tab-content.active {
+        
+        .vault-screen.active {
             display: block;
+            animation: fadeIn 0.4s ease-out;
         }
-
-        .novo-calculo-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
-            width: 100%;
-            margin-bottom: 30px;
+        
+        .lock-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            animation: pulse 2s ease-in-out infinite;
         }
-
-        .novo-calculo-btn:hover {
-            transform: translateY(-2px);
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
-
-        .form-group {
-            margin-bottom: 20px;
+        
+        .input-group {
+            margin-bottom: 24px;
         }
-
+        
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-
+        
         input, textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #dee2e6;
+            padding: 14px 18px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 16px;
-            transition: border 0.3s;
-            font-family: inherit;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
         }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
+        
         input:focus, textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
         }
-
-        .campos-container {
-            background: #f8f9fa;
-            padding: 20px;
+        
+        input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border: none;
             border-radius: 8px;
+            color: white;
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 240, 255, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--bg-mid);
+            box-shadow: 0 4px 16px rgba(0, 240, 255, 0.2);
+        }
+        
+        .btn-small {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .vault-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .vault-header h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.8rem;
+            color: var(--accent-cyan);
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-bottom: 20px;
         }
-
-        .campo-item {
+        
+        .controls .btn-small {
+            flex: 1 1 auto;
+            min-width: 120px;
+        }
+        
+        .search-box {
+            width: 100%;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-left: 45px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+        }
+        
+        .search-box input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+        
+        .pagination {
             display: flex;
+            justify-content: center;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 10px;
-            align-items: flex-end;
-        }
-
-        .campo-item input {
-            flex: 1;
-        }
-
-        .btn-remove {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-add {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
-            width: 100%;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-        }
-
-        .resultado {
             margin-top: 20px;
-            padding: 20px;
-            background: #d4edda;
-            border-radius: 8px;
-            border-left: 4px solid #28a745;
+            padding: 15px;
         }
-
-        .resultado h3 {
-            color: #155724;
-            margin-bottom: 10px;
-        }
-
-        .resultado-valor {
-            font-size: 2em;
-            font-weight: bold;
-            color: #155724;
-        }
-
-        .formulas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .formula-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
+        
+        .pagination button {
+            padding: 8px 16px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
             cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-family: 'JetBrains Mono', monospace;
         }
-
-        .formula-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            border-color: #667eea;
+        
+        .pagination button:hover:not(:disabled) {
+            background: var(--bg-mid);
+            border-color: var(--accent-cyan);
         }
-
-        .formula-card h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 1.2em;
+        
+        .pagination button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
-
-        .formula-card p {
-            color: #6c757d;
-            font-size: 0.9em;
+        
+        .pagination span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .stats {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+        
+        .password-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .password-item {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .password-item:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 4px 16px rgba(0, 240, 255, 0.15);
+        }
+        
+        .password-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 8px;
         }
-
-        .formula-card .formula {
-            background: white;
-            padding: 8px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.85em;
-            margin-top: 10px;
+        
+        .password-item-title {
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
         }
-
-        .btn-delete-formula {
-            background: #dc3545;
-            color: white;
+        
+        .password-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .icon-btn {
+            background: none;
             border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
+            color: var(--text-secondary);
             cursor: pointer;
-            font-size: 0.9em;
-            margin-top: 10px;
-            width: 100%;
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
         }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
+        
+        .icon-btn:hover {
+            background: var(--bg-mid);
+            color: var(--accent-cyan);
         }
-
-        .empty-state svg {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
-            opacity: 0.3;
+        
+        .password-item-info {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.6;
         }
-
-        .modal {
+        
+        .password-value {
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-dark);
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        
+        .hidden {
             display: none;
+        }
+        
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            background: rgba(10, 14, 39, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
             align-items: center;
             justify-content: center;
+            z-index: 1000;
         }
-
+        
         .modal.active {
             display: flex;
+            animation: fadeIn 0.3s ease-out;
         }
-
+        
         .modal-content {
-            background: white;
+            background: var(--bg-mid);
+            border: 1px solid var(--border);
+            border-radius: 16px;
             padding: 30px;
-            border-radius: 20px;
-            max-width: 600px;
+            max-width: 500px;
             width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
+            box-shadow: 0 16px 48px rgba(0, 240, 255, 0.2);
+            animation: slideUp 0.3s ease-out;
         }
-
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
             margin-bottom: 20px;
+            color: var(--accent-cyan);
         }
-
-        .modal-header h2 {
-            color: #667eea;
-        }
-
-        .btn-close {
-            background: none;
-            border: none;
-            font-size: 2em;
-            cursor: pointer;
-            color: #6c757d;
-            padding: 0;
-            width: auto;
-        }
-
-        .historico-item {
-            background: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 15px;
+        
+        .error {
+            background: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            color: #ff6b6b;
+            padding: 12px;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
         }
-
-        .historico-item h4 {
-            color: #667eea;
-            margin-bottom: 10px;
+        
+        .success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: var(--accent-green);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
         }
-
-        .historico-valores {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
+        
+        /* Scrollbar customization */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .historico-valores div {
-            background: white;
-            padding: 8px;
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
             border-radius: 4px;
         }
-
-        .historico-valores strong {
-            display: block;
-            font-size: 0.85em;
-            color: #6c757d;
-            margin-bottom: 3px;
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-purple);
         }
-
-        .historico-item small {
-            color: #6c757d;
-            display: block;
-            margin-top: 10px;
-        }
-
-        .btn-delete-historico {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85em;
-            margin-top: 10px;
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .lock-screen, .vault-screen {
+                padding: 24px;
+            }
+            
+            .vault-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .vault-header h2 {
+                font-size: 1.4rem;
+            }
+            
+            .controls {
+                width: 100%;
+            }
+            
+            .controls .btn-small {
+                flex: 1 1 calc(50% - 5px);
+                min-width: 0;
+            }
+            
+            .password-item {
+                padding: 12px;
+            }
+            
+            .password-item-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .password-item-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .pagination button {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+            
+            .pagination span {
+                width: 100%;
+                text-align: center;
+                margin: 5px 0;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🧮 Calculadora Universal</h1>
-            <p>Crie suas próprias fórmulas de cálculo</p>
+            <h1>🔐 COFRE</h1>
+            <p>Gerenciador de Senhas Criptografado</p>
         </div>
-
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('formulas')">Minhas Fórmulas</button>
-            <button class="tab" onclick="showTab('historico')">Histórico</button>
+        
+        <!-- Tela de Login -->
+        <div id="lockScreen" class="lock-screen">
+            <div class="lock-icon">🔒</div>
+            <div id="lockError"></div>
+            <div class="input-group">
+                <label for="masterPassword">Chave Mestra</label>
+                <input type="password" id="masterPassword" placeholder="Digite sua chave mestra" autocomplete="off">
+            </div>
+            <button class="btn" onclick="unlockVault()">Desbloquear Cofre</button>
         </div>
-
-        <div class="content">
-            <!-- ABA FÓRMULAS -->
-            <div id="formulas" class="tab-content active">
-                <button class="novo-calculo-btn" onclick="abrirModalNovaFormula()">
-                    ➕ Nova Fórmula de Cálculo
-                </button>
-
-                <div id="listaFormulas" class="formulas-grid"></div>
+        
+        <!-- Tela do Cofre -->
+        <div id="vaultScreen" class="vault-screen">
+            <div class="vault-header">
+                <h2>🔓 Cofre Desbloqueado</h2>
+                <button class="btn btn-secondary btn-small" onclick="lockVault()">Bloquear</button>
             </div>
-
-            <!-- ABA HISTÓRICO -->
-            <div id="historico" class="tab-content">
-                <h2 style="margin-bottom: 20px;">Histórico de Cálculos</h2>
-                <div id="listaHistorico"></div>
+            
+            <div class="controls">
+                <button class="btn btn-secondary btn-small" onclick="showAddModal()">➕ Adicionar</button>
+                <button class="btn btn-secondary btn-small" onclick="exportPasswords()">⬇️ Exportar</button>
+                <button class="btn btn-secondary btn-small" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importPasswords(event)">
             </div>
-        </div>
-    </div>
-
-    <!-- MODAL NOVA FÓRMULA -->
-    <div id="modalFormula" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Nova Fórmula</h2>
-                <button class="btn-close" onclick="fecharModal()">&times;</button>
+            
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Buscar senhas..." oninput="searchPasswords()">
             </div>
-
-            <div class="form-group">
-                <label>Nome da Fórmula:</label>
-                <input type="text" id="nomeFormula" placeholder="Ex: Gasto de Gasolina, Litros de Óleo">
-            </div>
-
-            <div class="form-group">
-                <label>Descrição (opcional):</label>
-                <textarea id="descricaoFormula" placeholder="Ex: Calcula quanto vou gastar de combustível em uma viagem"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Campos de Entrada:</label>
-                <div id="camposContainer" class="campos-container"></div>
-                <button class="btn-add" onclick="adicionarCampo()">+ Adicionar Campo</button>
-            </div>
-
-            <div class="form-group">
-                <label>Fórmula de Cálculo:</label>
-                <input type="text" id="formula" placeholder="Ex: {campo1} * {campo2} / {campo3}">
-                <small style="color: #6c757d; margin-top: 5px; display: block;">
-                    Use {campo1}, {campo2}, etc. para referenciar os campos. Operações: + - * /
-                </small>
-            </div>
-
-            <button class="btn-primary" onclick="salvarFormula()">Salvar Fórmula</button>
+            
+            <div class="stats" id="statsDisplay"></div>
+            
+            <div id="passwordList" class="password-list"></div>
+            
+            <div class="pagination" id="pagination"></div>
         </div>
     </div>
-
-    <!-- MODAL USAR FÓRMULA -->
-    <div id="modalCalculo" class="modal">
+    
+    <!-- Modal para Adicionar/Editar Senha -->
+    <div id="passwordModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="tituloCalculo"></h2>
-                <button class="btn-close" onclick="fecharModalCalculo()">&times;</button>
+            <div class="modal-header">Nova Senha</div>
+            <div id="modalError"></div>
+            <div class="input-group">
+                <label for="modalTitle">Título</label>
+                <input type="text" id="modalTitle" placeholder="Ex: Email, Netflix, Banco">
             </div>
-
-            <div id="camposCalculo"></div>
-
-            <button class="btn-primary" onclick="executarCalculo()">Calcular</button>
-
-            <div id="resultadoCalculo"></div>
+            <div class="input-group">
+                <label for="modalUsername">Usuário/Email</label>
+                <input type="text" id="modalUsername" placeholder="usuario@email.com">
+            </div>
+            <div class="input-group">
+                <label for="modalPassword">Senha</label>
+                <input type="text" id="modalPassword" placeholder="Sua senha">
+            </div>
+            <div class="input-group">
+                <label for="modalNotes">Notas (opcional)</label>
+                <textarea id="modalNotes" rows="3" placeholder="Informações adicionais"></textarea>
+            </div>
+            <button class="btn" onclick="savePassword()">Salvar</button>
+            <button class="btn btn-secondary" onclick="closeModal()" style="margin-top: 10px;">Cancelar</button>
         </div>
     </div>
 
     <script>
-        let db;
-        let campos = [];
-        let formulaAtual = null;
+        // Variáveis globais
+        let masterKey = null;
+        let db = null;
+        let currentEditId = null;
+        let allPasswords = [];
+        let filteredPasswords = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
 
         // Inicializar IndexedDB
         function initDB() {
-            const request = indexedDB.open('CalculadoraDB', 1);
-
-            request.onerror = () => console.error('Erro ao abrir banco de dados');
-
-            request.onsuccess = (e) => {
-                db = e.target.result;
-                carregarFormulas();
-                carregarHistorico();
-            };
-
-            request.onupgradeneeded = (e) => {
-                db = e.target.result;
-
-                if (!db.objectStoreNames.contains('formulas')) {
-                    db.createObjectStore('formulas', { keyPath: 'id', autoIncrement: true });
-                }
-
-                if (!db.objectStoreNames.contains('historico')) {
-                    db.createObjectStore('historico', { keyPath: 'id', autoIncrement: true });
-                }
-            };
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('PasswordVault', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('passwords')) {
+                        const objectStore = db.createObjectStore('passwords', { keyPath: 'id', autoIncrement: true });
+                        objectStore.createIndex('title', 'title', { unique: false });
+                    }
+                };
+            });
         }
 
-        function showTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        // Funções de criptografia usando Web Crypto API
+        async function deriveKey(password, salt) {
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            );
             
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-
-            if (tabName === 'historico') carregarHistorico();
+            return crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: 100000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            );
         }
 
-        function abrirModalNovaFormula() {
-            campos = [{ nome: '' }];
-            renderizarCampos();
-            document.getElementById('nomeFormula').value = '';
-            document.getElementById('descricaoFormula').value = '';
-            document.getElementById('formula').value = '';
-            document.getElementById('modalFormula').classList.add('active');
+        async function encrypt(text, key) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                data
+            );
+            
+            // Combinar IV e dados criptografados
+            const combined = new Uint8Array(iv.length + encrypted.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(encrypted), iv.length);
+            
+            return btoa(String.fromCharCode(...combined));
         }
 
-        function fecharModal() {
-            document.getElementById('modalFormula').classList.remove('active');
-        }
-
-        function fecharModalCalculo() {
-            document.getElementById('modalCalculo').classList.remove('active');
-        }
-
-        function adicionarCampo() {
-            campos.push({ nome: '' });
-            renderizarCampos();
-        }
-
-        function removerCampo(index) {
-            campos.splice(index, 1);
-            renderizarCampos();
-        }
-
-        function renderizarCampos() {
-            const container = document.getElementById('camposContainer');
-            container.innerHTML = campos.map((campo, index) => `
-                <div class="campo-item">
-                    <input type="text" 
-                           placeholder="Nome do campo (ex: Distância em km)" 
-                           value="${campo.nome}"
-                           onchange="campos[${index}].nome = this.value">
-                    ${campos.length > 1 ? `<button class="btn-remove" onclick="removerCampo(${index})">✕</button>` : ''}
-                </div>
-            `).join('');
-        }
-
-        function salvarFormula() {
-            const nome = document.getElementById('nomeFormula').value;
-            const descricao = document.getElementById('descricaoFormula').value;
-            const formula = document.getElementById('formula').value;
-
-            if (!nome || !formula || campos.some(c => !c.nome)) {
-                alert('Preencha o nome da fórmula, todos os campos e a fórmula!');
-                return;
-            }
-
-            const transaction = db.transaction(['formulas'], 'readwrite');
-            const store = transaction.objectStore('formulas');
-
-            const formulaObj = {
-                nome,
-                descricao,
-                campos: campos.map(c => c.nome),
-                formula,
-                dataCriacao: new Date().toISOString()
-            };
-
-            store.add(formulaObj);
-
-            transaction.oncomplete = () => {
-                fecharModal();
-                carregarFormulas();
-            };
-        }
-
-        function carregarFormulas() {
-            const transaction = db.transaction(['formulas'], 'readonly');
-            const store = transaction.objectStore('formulas');
-            const request = store.getAll();
-
-            request.onsuccess = (e) => {
-                const formulas = e.target.result;
-                const lista = document.getElementById('listaFormulas');
-
-                if (formulas.length === 0) {
-                    lista.innerHTML = `
-                        <div class="empty-state">
-                            <p style="font-size: 1.2em;">📝 Nenhuma fórmula criada ainda</p>
-                            <p>Clique no botão acima para criar sua primeira fórmula!</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                lista.innerHTML = formulas.map(f => `
-                    <div class="formula-card" onclick="abrirFormula(${f.id})">
-                        <h3>${f.nome}</h3>
-                        ${f.descricao ? `<p>${f.descricao}</p>` : ''}
-                        <p><strong>Campos:</strong> ${f.campos.join(', ')}</p>
-                        <div class="formula">${f.formula}</div>
-                        <button class="btn-delete-formula" onclick="event.stopPropagation(); deletarFormula(${f.id})">
-                            Excluir Fórmula
-                        </button>
-                    </div>
-                `).join('');
-            };
-        }
-
-        function deletarFormula(id) {
-            if (!confirm('Deseja realmente excluir esta fórmula?')) return;
-
-            const transaction = db.transaction(['formulas'], 'readwrite');
-            const store = transaction.objectStore('formulas');
-            store.delete(id);
-
-            transaction.oncomplete = () => carregarFormulas();
-        }
-
-        function abrirFormula(id) {
-            const transaction = db.transaction(['formulas'], 'readonly');
-            const store = transaction.objectStore('formulas');
-            const request = store.get(id);
-
-            request.onsuccess = (e) => {
-                formulaAtual = e.target.result;
-                formulaAtual.id = id;
-                
-                document.getElementById('tituloCalculo').textContent = formulaAtual.nome;
-                
-                const container = document.getElementById('camposCalculo');
-                container.innerHTML = formulaAtual.campos.map((campo, index) => `
-                    <div class="form-group">
-                        <label>${campo}:</label>
-                        <input type="number" id="valor${index}" step="any" placeholder="Digite o valor">
-                    </div>
-                `).join('');
-
-                document.getElementById('resultadoCalculo').innerHTML = '';
-                document.getElementById('modalCalculo').classList.add('active');
-            };
-        }
-
-        function executarCalculo() {
-            const valores = formulaAtual.campos.map((campo, index) => {
-                const valor = parseFloat(document.getElementById(`valor${index}`).value);
-                return { campo, valor };
-            });
-
-            if (valores.some(v => isNaN(v.valor))) {
-                alert('Preencha todos os campos com valores válidos!');
-                return;
-            }
-
-            let formula = formulaAtual.formula;
-            valores.forEach((v, index) => {
-                formula = formula.replace(new RegExp(`\\{campo${index + 1}\\}`, 'g'), v.valor);
-            });
-
-            let resultado;
+        async function decrypt(encryptedData, key) {
             try {
-                resultado = eval(formula);
-            } catch (error) {
-                alert('Erro ao calcular a fórmula!');
+                const combined = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+                const iv = combined.slice(0, 12);
+                const data = combined.slice(12);
+                
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    key,
+                    data
+                );
+                
+                const decoder = new TextDecoder();
+                return decoder.decode(decrypted);
+            } catch (e) {
+                throw new Error('Falha na descriptografia');
+            }
+        }
+
+        // Desbloquear cofre
+        async function unlockVault() {
+            const password = document.getElementById('masterPassword').value;
+            
+            if (!password) {
+                showError('lockError', 'Digite a chave mestra');
                 return;
             }
+            
+            try {
+                // Usar um salt fixo (em produção, armazenar salt por usuário)
+                const salt = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+                masterKey = await deriveKey(password, salt);
+                
+                // Testar a chave tentando carregar senhas
+                await loadPasswords();
+                
+                document.getElementById('lockScreen').style.display = 'none';
+                document.getElementById('vaultScreen').classList.add('active');
+                document.getElementById('masterPassword').value = '';
+            } catch (error) {
+                showError('lockError', 'Chave mestra incorreta ou erro ao carregar');
+                console.error(error);
+            }
+        }
 
-            // Salvar no histórico
-            const transaction = db.transaction(['historico'], 'readwrite');
-            const store = transaction.objectStore('historico');
+        // Bloquear cofre
+        function lockVault() {
+            masterKey = null;
+            document.getElementById('vaultScreen').classList.remove('active');
+            document.getElementById('lockScreen').style.display = 'block';
+            document.getElementById('passwordList').innerHTML = '';
+        }
 
-            store.add({
-                formulaId: formulaAtual.id,
-                formulaNome: formulaAtual.nome,
-                valores: valores,
-                resultado: resultado,
-                data: new Date().toISOString()
-            });
-
-            transaction.oncomplete = () => {
-                document.getElementById('resultadoCalculo').innerHTML = `
-                    <div class="resultado">
-                        <h3>Resultado</h3>
-                        <div class="resultado-valor">${resultado.toFixed(2)}</div>
+        // Carregar senhas
+        async function loadPasswords() {
+            if (!db) await initDB();
+            
+            const transaction = db.transaction(['passwords'], 'readonly');
+            const objectStore = transaction.objectStore('passwords');
+            const request = objectStore.getAll();
+            
+            request.onsuccess = async () => {
+                const passwords = request.result;
+                allPasswords = [];
+                
+                // Descriptografar todas as senhas
+                for (const item of passwords) {
+                    try {
+                        allPasswords.push({
+                            id: item.id,
+                            title: await decrypt(item.title, masterKey),
+                            username: await decrypt(item.username, masterKey),
+                            password: await decrypt(item.password, masterKey),
+                            notes: item.notes ? await decrypt(item.notes, masterKey) : '',
+                            timestamp: item.timestamp
+                        });
+                    } catch (e) {
+                        console.error('Erro ao descriptografar item:', e);
+                    }
+                }
+                
+                // Ordenar por título
+                allPasswords.sort((a, b) => a.title.localeCompare(b.title));
+                
+                // Aplicar filtro de busca se houver
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                if (searchTerm) {
+                    filteredPasswords = allPasswords.filter(item => 
+                        item.title.toLowerCase().includes(searchTerm) ||
+                        item.username.toLowerCase().includes(searchTerm) ||
+                        item.notes.toLowerCase().includes(searchTerm)
+                    );
+                } else {
+                    filteredPasswords = [...allPasswords];
+                }
+                
+                currentPage = 1;
+                renderPasswords();
+            };
+        }
+        
+        // Renderizar senhas com paginação
+        function renderPasswords() {
+            const list = document.getElementById('passwordList');
+            const statsDisplay = document.getElementById('statsDisplay');
+            const pagination = document.getElementById('pagination');
+            
+            list.innerHTML = '';
+            
+            if (filteredPasswords.length === 0) {
+                if (allPasswords.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhuma senha salva ainda. Clique em "Adicionar" para começar.</p>';
+                } else {
+                    list.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhuma senha encontrada na busca.</p>';
+                }
+                statsDisplay.innerHTML = '';
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            // Calcular paginação
+            const totalPages = Math.ceil(filteredPasswords.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredPasswords.length);
+            const currentItems = filteredPasswords.slice(startIndex, endIndex);
+            
+            // Mostrar estatísticas
+            statsDisplay.innerHTML = `Mostrando ${startIndex + 1}-${endIndex} de ${filteredPasswords.length} senhas`;
+            
+            // Renderizar itens da página atual
+            currentItems.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'password-item';
+                div.style.animationDelay = `${index * 0.05}s`;
+                div.innerHTML = `
+                    <div class="password-item-header">
+                        <div class="password-item-title">${escapeHtml(item.title)}</div>
+                        <div class="password-item-actions">
+                            <button class="icon-btn" onclick="copyToClipboard('${escapeHtml(item.username)}', this)" title="Copiar usuário">👤</button>
+                            <button class="icon-btn" onclick="copyToClipboard('${escapeHtml(item.password)}', this)" title="Copiar senha">📋</button>
+                            <button class="icon-btn" onclick="editPassword(${item.id})" title="Editar">✏️</button>
+                            <button class="icon-btn" onclick="deletePassword(${item.id})" title="Deletar">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="password-item-info">
+                        <div><strong>Usuário:</strong> ${escapeHtml(item.username)}</div>
+                        <div><strong>Senha:</strong> <span class="password-value">••••••••</span> <button class="icon-btn" onclick="togglePassword(this, '${escapeHtml(item.password)}')">👁️</button></div>
+                        ${item.notes ? `<div><strong>Notas:</strong> ${escapeHtml(item.notes)}</div>` : ''}
                     </div>
                 `;
-            };
+                list.appendChild(div);
+            });
+            
+            // Renderizar controles de paginação
+            if (totalPages > 1) {
+                pagination.innerHTML = `
+                    <button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>⏮️</button>
+                    <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>◀️</button>
+                    <span>Página ${currentPage} de ${totalPages}</span>
+                    <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>▶️</button>
+                    <button onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>⏭️</button>
+                `;
+            } else {
+                pagination.innerHTML = '';
+            }
+        }
+        
+        // Mudar página
+        function changePage(page) {
+            currentPage = page;
+            renderPasswords();
+            document.getElementById('passwordList').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Buscar senhas
+        function searchPasswords() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (searchTerm) {
+                filteredPasswords = allPasswords.filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) ||
+                    item.username.toLowerCase().includes(searchTerm) ||
+                    item.notes.toLowerCase().includes(searchTerm)
+                );
+            } else {
+                filteredPasswords = [...allPasswords];
+            }
+            
+            currentPage = 1;
+            renderPasswords();
         }
 
-        function carregarHistorico() {
-            const transaction = db.transaction(['historico'], 'readonly');
-            const store = transaction.objectStore('historico');
-            const request = store.getAll();
+        // Mostrar/esconder senha
+        function togglePassword(btn, password) {
+            const span = btn.previousElementSibling;
+            if (span.textContent === '••••••••') {
+                span.textContent = password;
+                btn.textContent = '🙈';
+            } else {
+                span.textContent = '••••••••';
+                btn.textContent = '👁️';
+            }
+        }
 
-            request.onsuccess = (e) => {
-                const historico = e.target.result.reverse();
-                const lista = document.getElementById('listaHistorico');
+        // Copiar para clipboard
+        async function copyToClipboard(text, btn) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalText = btn.textContent;
+                btn.textContent = '✅';
+                setTimeout(() => btn.textContent = originalText, 2000);
+            } catch (e) {
+                alert('Erro ao copiar');
+            }
+        }
 
-                if (historico.length === 0) {
-                    lista.innerHTML = '<div class="empty-state">Nenhum cálculo realizado</div>';
-                    return;
+        // Mostrar modal de adicionar
+        function showAddModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').value = '';
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalPassword').value = '';
+            document.getElementById('modalNotes').value = '';
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        // Fechar modal
+        function closeModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+            document.getElementById('modalError').innerHTML = '';
+        }
+
+        // Salvar senha
+        async function savePassword() {
+            const title = document.getElementById('modalTitle').value;
+            const username = document.getElementById('modalUsername').value;
+            const password = document.getElementById('modalPassword').value;
+            const notes = document.getElementById('modalNotes').value;
+            
+            if (!title || !username || !password) {
+                showError('modalError', 'Preencha título, usuário e senha');
+                return;
+            }
+            
+            try {
+                const encryptedData = {
+                    title: await encrypt(title, masterKey),
+                    username: await encrypt(username, masterKey),
+                    password: await encrypt(password, masterKey),
+                    notes: notes ? await encrypt(notes, masterKey) : '',
+                    timestamp: Date.now()
+                };
+                
+                const transaction = db.transaction(['passwords'], 'readwrite');
+                const objectStore = transaction.objectStore('passwords');
+                
+                if (currentEditId) {
+                    encryptedData.id = currentEditId;
+                    objectStore.put(encryptedData);
+                } else {
+                    objectStore.add(encryptedData);
                 }
+                
+                transaction.oncomplete = () => {
+                    closeModal();
+                    loadPasswords();
+                };
+            } catch (error) {
+                showError('modalError', 'Erro ao salvar senha');
+                console.error(error);
+            }
+        }
 
-                lista.innerHTML = historico.map(h => {
-                    const data = new Date(h.data);
-                    return `
-                        <div class="historico-item">
-                            <h4>${h.formulaNome}</h4>
-                            <div class="historico-valores">
-                                ${h.valores.map(v => `
-                                    <div>
-                                        <strong>${v.campo}</strong>
-                                        ${v.valor}
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <div style="background: #d4edda; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                                <strong style="color: #155724;">Resultado: ${h.resultado.toFixed(2)}</strong>
-                            </div>
-                            <small>${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR')}</small>
-                            <button class="btn-delete-historico" onclick="deletarHistorico(${h.id})">Excluir</button>
-                        </div>
-                    `;
-                }).join('');
+        // Editar senha
+        async function editPassword(id) {
+            const item = allPasswords.find(p => p.id === id);
+            if (!item) {
+                alert('Senha não encontrada');
+                return;
+            }
+            
+            currentEditId = id;
+            document.getElementById('modalTitle').value = item.title;
+            document.getElementById('modalUsername').value = item.username;
+            document.getElementById('modalPassword').value = item.password;
+            document.getElementById('modalNotes').value = item.notes;
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        // Deletar senha
+        function deletePassword(id) {
+            if (!confirm('Tem certeza que deseja deletar esta senha?')) return;
+            
+            const transaction = db.transaction(['passwords'], 'readwrite');
+            const objectStore = transaction.objectStore('passwords');
+            objectStore.delete(id);
+            
+            transaction.oncomplete = () => loadPasswords();
+        }
+
+        // Exportar senhas
+        async function exportPasswords() {
+            // Solicitar senha para o arquivo de exportação
+            const exportPassword = prompt('🔐 Defina uma senha para proteger o arquivo de exportação:\n\n(Esta senha será necessária para importar o arquivo)');
+            
+            if (!exportPassword) {
+                alert('Exportação cancelada');
+                return;
+            }
+            
+            if (exportPassword.length < 6) {
+                alert('A senha deve ter no mínimo 6 caracteres');
+                return;
+            }
+            
+            const transaction = db.transaction(['passwords'], 'readonly');
+            const objectStore = transaction.objectStore('passwords');
+            const request = objectStore.getAll();
+            
+            request.onsuccess = async () => {
+                const passwords = request.result;
+                
+                // Descriptografar tudo para exportação
+                const decrypted = [];
+                for (const item of passwords) {
+                    try {
+                        decrypted.push({
+                            title: await decrypt(item.title, masterKey),
+                            username: await decrypt(item.username, masterKey),
+                            password: await decrypt(item.password, masterKey),
+                            notes: item.notes ? await decrypt(item.notes, masterKey) : '',
+                            timestamp: item.timestamp
+                        });
+                    } catch (e) {
+                        console.error('Erro ao descriptografar para exportação:', e);
+                    }
+                }
+                
+                // Criptografar o arquivo de exportação
+                const dataStr = JSON.stringify(decrypted);
+                const exportSalt = crypto.getRandomValues(new Uint8Array(16));
+                const exportKey = await deriveKey(exportPassword, exportSalt);
+                const encryptedExport = await encrypt(dataStr, exportKey);
+                
+                // Incluir o salt no arquivo
+                const exportData = {
+                    version: 1,
+                    salt: btoa(String.fromCharCode(...exportSalt)),
+                    data: encryptedExport,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const exportStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([exportStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `senhas-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Backup criado com sucesso!\n\n⚠️ Guarde a senha em local seguro - você precisará dela para importar.');
             };
         }
 
-        function deletarHistorico(id) {
-            const transaction = db.transaction(['historico'], 'readwrite');
-            const store = transaction.objectStore('historico');
-            store.delete(id);
-
-            transaction.oncomplete = () => carregarHistorico();
+        // Importar senhas
+        async function importPasswords(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const fileData = JSON.parse(e.target.result);
+                    
+                    let data;
+                    
+                    // Verificar se é arquivo criptografado (novo formato)
+                    if (fileData.version === 1 && fileData.salt && fileData.data) {
+                        const importPassword = prompt('🔐 Digite a senha do arquivo de backup:');
+                        
+                        if (!importPassword) {
+                            alert('Importação cancelada');
+                            return;
+                        }
+                        
+                        try {
+                            // Descriptografar o arquivo
+                            const salt = Uint8Array.from(atob(fileData.salt), c => c.charCodeAt(0));
+                            const importKey = await deriveKey(importPassword, salt);
+                            const decryptedStr = await decrypt(fileData.data, importKey);
+                            data = JSON.parse(decryptedStr);
+                        } catch (error) {
+                            alert('❌ Senha incorreta ou arquivo corrompido');
+                            return;
+                        }
+                    } 
+                    // Suporte para arquivos antigos não criptografados
+                    else if (Array.isArray(fileData)) {
+                        const confirm = window.confirm('⚠️ ATENÇÃO: Este arquivo NÃO está criptografado!\n\nSuas senhas estão visíveis em texto simples.\nDeseja continuar a importação?');
+                        if (!confirm) return;
+                        data = fileData;
+                    } else {
+                        alert('Formato de arquivo inválido');
+                        return;
+                    }
+                    
+                    if (!Array.isArray(data)) {
+                        alert('Formato de arquivo inválido');
+                        return;
+                    }
+                    
+                    const transaction = db.transaction(['passwords'], 'readwrite');
+                    const objectStore = transaction.objectStore('passwords');
+                    
+                    let imported = 0;
+                    for (const item of data) {
+                        try {
+                            const encryptedData = {
+                                title: await encrypt(item.title, masterKey),
+                                username: await encrypt(item.username, masterKey),
+                                password: await encrypt(item.password, masterKey),
+                                notes: item.notes ? await encrypt(item.notes, masterKey) : '',
+                                timestamp: item.timestamp || Date.now()
+                            };
+                            objectStore.add(encryptedData);
+                            imported++;
+                        } catch (e) {
+                            console.error('Erro ao importar item:', e);
+                        }
+                    }
+                    
+                    transaction.oncomplete = () => {
+                        loadPasswords();
+                        alert(`✅ ${imported} senhas importadas com sucesso!`);
+                    };
+                } catch (error) {
+                    alert('Erro ao importar arquivo: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
         }
 
-        window.onload = initDB;
+        // Utilitários
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="error">${message}</div>`;
+            setTimeout(() => el.innerHTML = '', 3000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Inicializar ao carregar
+        window.onload = async () => {
+            await initDB();
+        };
+
+        // Fechar modal ao clicar fora
+        document.getElementById('passwordModal').addEventListener('click', (e) => {
+            if (e.target.id === 'passwordModal') {
+                closeModal();
+            }
+        });
+
+        // Permitir Enter para desbloquear
+        document.getElementById('masterPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                unlockVault();
+            }
+        });
     </script>
 </body>
 </html>
