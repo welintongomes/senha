@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Universal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .novo-calculo-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .novo-calculo-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .campos-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .campo-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: flex-end;
+        }
+
+        .campo-item input {
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-add {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .resultado {
+            margin-top: 20px;
+            padding: 20px;
+            background: #d4edda;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .resultado h3 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        .resultado-valor {
+            font-size: 2em;
+            font-weight: bold;
+            color: #155724;
+        }
+
+        .formulas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .formula-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .formula-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .formula-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .formula-card p {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .formula-card .formula {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .btn-delete-formula {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 2em;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0;
+            width: auto;
+        }
+
+        .historico-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .historico-item h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .historico-valores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .historico-valores div {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .historico-valores strong {
+            display: block;
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .historico-item small {
+            color: #6c757d;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .btn-delete-historico {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧮 Calculadora Universal</h1>
+            <p>Crie suas próprias fórmulas de cálculo</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('formulas')">Minhas Fórmulas</button>
+            <button class="tab" onclick="showTab('historico')">Histórico</button>
+        </div>
+
+        <div class="content">
+            <!-- ABA FÓRMULAS -->
+            <div id="formulas" class="tab-content active">
+                <button class="novo-calculo-btn" onclick="abrirModalNovaFormula()">
+                    ➕ Nova Fórmula de Cálculo
+                </button>
+
+                <div id="listaFormulas" class="formulas-grid"></div>
+            </div>
+
+            <!-- ABA HISTÓRICO -->
+            <div id="historico" class="tab-content">
+                <h2 style="margin-bottom: 20px;">Histórico de Cálculos</h2>
+                <div id="listaHistorico"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOVA FÓRMULA -->
+    <div id="modalFormula" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nova Fórmula</h2>
+                <button class="btn-close" onclick="fecharModal()">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Nome da Fórmula:</label>
+                <input type="text" id="nomeFormula" placeholder="Ex: Gasto de Gasolina, Litros de Óleo">
+            </div>
+
+            <div class="form-group">
+                <label>Descrição (opcional):</label>
+                <textarea id="descricaoFormula" placeholder="Ex: Calcula quanto vou gastar de combustível em uma viagem"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Campos de Entrada:</label>
+                <div id="camposContainer" class="campos-container"></div>
+                <button class="btn-add" onclick="adicionarCampo()">+ Adicionar Campo</button>
+            </div>
+
+            <div class="form-group">
+                <label>Fórmula de Cálculo:</label>
+                <input type="text" id="formula" placeholder="Ex: {campo1} * {campo2} / {campo3}">
+                <small style="color: #6c757d; margin-top: 5px; display: block;">
+                    Use {campo1}, {campo2}, etc. para referenciar os campos. Operações: + - * /
+                </small>
+            </div>
+
+            <button class="btn-primary" onclick="salvarFormula()">Salvar Fórmula</button>
+        </div>
+    </div>
+
+    <!-- MODAL USAR FÓRMULA -->
+    <div id="modalCalculo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tituloCalculo"></h2>
+                <button class="btn-close" onclick="fecharModalCalculo()">&times;</button>
+            </div>
+
+            <div id="camposCalculo"></div>
+
+            <button class="btn-primary" onclick="executarCalculo()">Calcular</button>
+
+            <div id="resultadoCalculo"></div>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        let campos = [];
+        let formulaAtual = null;
+
+        // Inicializar IndexedDB
+        function initDB() {
+            const request = indexedDB.open('CalculadoraDB', 1);
+
+            request.onerror = () => console.error('Erro ao abrir banco de dados');
+
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                carregarFormulas();
+                carregarHistorico();
+            };
+
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+
+                if (!db.objectStoreNames.contains('formulas')) {
+                    db.createObjectStore('formulas', { keyPath: 'id', autoIncrement: true });
+                }
+
+                if (!db.objectStoreNames.contains('historico')) {
+                    db.createObjectStore('historico', { keyPath: 'id', autoIncrement: true });
+                }
+            };
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'historico') carregarHistorico();
+        }
+
+        function abrirModalNovaFormula() {
+            campos = [{ nome: '' }];
+            renderizarCampos();
+            document.getElementById('nomeFormula').value = '';
+            document.getElementById('descricaoFormula').value = '';
+            document.getElementById('formula').value = '';
+            document.getElementById('modalFormula').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalFormula').classList.remove('active');
+        }
+
+        function fecharModalCalculo() {
+            document.getElementById('modalCalculo').classList.remove('active');
+        }
+
+        function adicionarCampo() {
+            campos.push({ nome: '' });
+            renderizarCampos();
+        }
+
+        function removerCampo(index) {
+            campos.splice(index, 1);
+            renderizarCampos();
+        }
+
+        function renderizarCampos() {
+            const container = document.getElementById('camposContainer');
+            container.innerHTML = campos.map((campo, index) => `
+                <div class="campo-item">
+                    <input type="text" 
+                           placeholder="Nome do campo (ex: Distância em km)" 
+                           value="${campo.nome}"
+                           onchange="campos[${index}].nome = this.value">
+                    ${campos.length > 1 ? `<button class="btn-remove" onclick="removerCampo(${index})">✕</button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function salvarFormula() {
+            const nome = document.getElementById('nomeFormula').value;
+            const descricao = document.getElementById('descricaoFormula').value;
+            const formula = document.getElementById('formula').value;
+
+            if (!nome || !formula || campos.some(c => !c.nome)) {
+                alert('Preencha o nome da fórmula, todos os campos e a fórmula!');
+                return;
+            }
+
+            const transaction = db.transaction(['formulas'], 'readwrite');
+            const store = transaction.objectStore('formulas');
+
+            const formulaObj = {
+                nome,
+                descricao,
+                campos: campos.map(c => c.nome),
+                formula,
+                dataCriacao: new Date().toISOString()
+            };
+
+            store.add(formulaObj);
+
+            transaction.oncomplete = () => {
+                fecharModal();
+                carregarFormulas();
+            };
+        }
+
+        function carregarFormulas() {
+            const transaction = db.transaction(['formulas'], 'readonly');
+            const store = transaction.objectStore('formulas');
+            const request = store.getAll();
+
+            request.onsuccess = (e) => {
+                const formulas = e.target.result;
+                const lista = document.getElementById('listaFormulas');
+
+                if (formulas.length === 0) {
+                    lista.innerHTML = `
+                        <div class="empty-state">
+                            <p style="font-size: 1.2em;">📝 Nenhuma fórmula criada ainda</p>
+                            <p>Clique no botão acima para criar sua primeira fórmula!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                lista.innerHTML = formulas.map(f => `
+                    <div class="formula-card" onclick="abrirFormula(${f.id})">
+                        <h3>${f.nome}</h3>
+                        ${f.descricao ? `<p>${f.descricao}</p>` : ''}
+                        <p><strong>Campos:</strong> ${f.campos.join(', ')}</p>
+                        <div class="formula">${f.formula}</div>
+                        <button class="btn-delete-formula" onclick="event.stopPropagation(); deletarFormula(${f.id})">
+                            Excluir Fórmula
+                        </button>
+                    </div>
+                `).join('');
+            };
+        }
+
+        function deletarFormula(id) {
+            if (!confirm('Deseja realmente excluir esta fórmula?')) return;
+
+            const transaction = db.transaction(['formulas'], 'readwrite');
+            const store = transaction.objectStore('formulas');
+            store.delete(id);
+
+            transaction.oncomplete = () => carregarFormulas();
+        }
+
+        function abrirFormula(id) {
+            const transaction = db.transaction(['formulas'], 'readonly');
+            const store = transaction.objectStore('formulas');
+            const request = store.get(id);
+
+            request.onsuccess = (e) => {
+                formulaAtual = e.target.result;
+                formulaAtual.id = id;
+                
+                document.getElementById('tituloCalculo').textContent = formulaAtual.nome;
+                
+                const container = document.getElementById('camposCalculo');
+                container.innerHTML = formulaAtual.campos.map((campo, index) => `
+                    <div class="form-group">
+                        <label>${campo}:</label>
+                        <input type="number" id="valor${index}" step="any" placeholder="Digite o valor">
+                    </div>
+                `).join('');
+
+                document.getElementById('resultadoCalculo').innerHTML = '';
+                document.getElementById('modalCalculo').classList.add('active');
+            };
+        }
+
+        function executarCalculo() {
+            const valores = formulaAtual.campos.map((campo, index) => {
+                const valor = parseFloat(document.getElementById(`valor${index}`).value);
+                return { campo, valor };
+            });
+
+            if (valores.some(v => isNaN(v.valor))) {
+                alert('Preencha todos os campos com valores válidos!');
+                return;
+            }
+
+            let formula = formulaAtual.formula;
+            valores.forEach((v, index) => {
+                formula = formula.replace(new RegExp(`\\{campo${index + 1}\\}`, 'g'), v.valor);
+            });
+
+            let resultado;
+            try {
+                resultado = eval(formula);
+            } catch (error) {
+                alert('Erro ao calcular a fórmula!');
+                return;
+            }
+
+            // Salvar no histórico
+            const transaction = db.transaction(['historico'], 'readwrite');
+            const store = transaction.objectStore('historico');
+
+            store.add({
+                formulaId: formulaAtual.id,
+                formulaNome: formulaAtual.nome,
+                valores: valores,
+                resultado: resultado,
+                data: new Date().toISOString()
+            });
+
+            transaction.oncomplete = () => {
+                document.getElementById('resultadoCalculo').innerHTML = `
+                    <div class="resultado">
+                        <h3>Resultado</h3>
+                        <div class="resultado-valor">${resultado.toFixed(2)}</div>
+                    </div>
+                `;
+            };
+        }
+
+        function carregarHistorico() {
+            const transaction = db.transaction(['historico'], 'readonly');
+            const store = transaction.objectStore('historico');
+            const request = store.getAll();
+
+            request.onsuccess = (e) => {
+                const historico = e.target.result.reverse();
+                const lista = document.getElementById('listaHistorico');
+
+                if (historico.length === 0) {
+                    lista.innerHTML = '<div class="empty-state">Nenhum cálculo realizado</div>';
+                    return;
+                }
+
+                lista.innerHTML = historico.map(h => {
+                    const data = new Date(h.data);
+                    return `
+                        <div class="historico-item">
+                            <h4>${h.formulaNome}</h4>
+                            <div class="historico-valores">
+                                ${h.valores.map(v => `
+                                    <div>
+                                        <strong>${v.campo}</strong>
+                                        ${v.valor}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="background: #d4edda; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                                <strong style="color: #155724;">Resultado: ${h.resultado.toFixed(2)}</strong>
+                            </div>
+                            <small>${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR')}</small>
+                            <button class="btn-delete-historico" onclick="deletarHistorico(${h.id})">Excluir</button>
+                        </div>
+                    `;
+                }).join('');
+            };
+        }
+
+        function deletarHistorico(id) {
+            const transaction = db.transaction(['historico'], 'readwrite');
+            const store = transaction.objectStore('historico');
+            store.delete(id);
+
+            transaction.oncomplete = () => carregarHistorico();
+        }
+
+        window.onload = initDB;
+    </script>
+</body>
+</html>
