@@ -39,6 +39,49 @@
             overflow-x: hidden;
         }
         
+        /* Loading screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--bg-light);
+            border-top: 4px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.2rem;
+            color: var(--accent-cyan);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
         body::before {
             content: '';
             position: fixed;
@@ -64,6 +107,12 @@
             width: 100%;
             position: relative;
             z-index: 1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .container.visible {
+            opacity: 1;
         }
         
         .header {
@@ -512,10 +561,11 @@
             .vault-header {
                 flex-direction: column;
                 gap: 15px;
-                align-items: flex-start;
+                align-items: center;
             }
             
             .vault-header h2 {
+                text-align: center;
                 font-size: 1.4rem;
             }
             
@@ -566,6 +616,12 @@
     </style>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Inicializando Cofre...</div>
+    </div>
+    
     <div class="container">
         <div class="header">
             <h1>🔐 COFRE</h1>
@@ -594,6 +650,7 @@
                 <button class="btn btn-secondary btn-small" onclick="showAddModal()">➕ Adicionar</button>
                 <button class="btn btn-secondary btn-small" onclick="exportPasswords()">⬇️ Exportar</button>
                 <button class="btn btn-secondary btn-small" onclick="document.getElementById('importFile').click()">⬆️ Importar</button>
+                <button class="btn btn-secondary btn-small" onclick="clearAllData()" style="color: #ff6b6b;">🗑️ Limpar Tudo</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importPasswords(event)">
             </div>
             
@@ -649,11 +706,22 @@
         // Inicializar IndexedDB
         function initDB() {
             return new Promise((resolve, reject) => {
+                // Verificar se IndexedDB está disponível
+                if (!window.indexedDB) {
+                    reject(new Error('IndexedDB não está disponível neste navegador'));
+                    return;
+                }
+                
                 const request = indexedDB.open('PasswordVault', 1);
                 
-                request.onerror = () => reject(request.error);
+                request.onerror = () => {
+                    console.error('Erro ao abrir IndexedDB:', request.error);
+                    reject(request.error);
+                };
+                
                 request.onsuccess = () => {
                     db = request.result;
+                    console.log('IndexedDB inicializado com sucesso');
                     resolve(db);
                 };
                 
@@ -662,8 +730,16 @@
                     if (!db.objectStoreNames.contains('passwords')) {
                         const objectStore = db.createObjectStore('passwords', { keyPath: 'id', autoIncrement: true });
                         objectStore.createIndex('title', 'title', { unique: false });
+                        console.log('Banco de dados criado');
                     }
                 };
+                
+                // Timeout de segurança
+                setTimeout(() => {
+                    if (!db) {
+                        reject(new Error('Timeout ao inicializar banco de dados'));
+                    }
+                }, 5000);
             });
         }
 
@@ -762,6 +838,17 @@
             document.getElementById('vaultScreen').classList.remove('active');
             document.getElementById('lockScreen').style.display = 'block';
             document.getElementById('passwordList').innerHTML = '';
+            
+            // Limpar dados em memória
+            allPasswords = [];
+            filteredPasswords = [];
+            
+            // Limpar busca
+            document.getElementById('searchInput').value = '';
+            
+            // Remover banner de aviso se existir
+            const warningBanner = document.getElementById('warningBanner');
+            if (warningBanner) warningBanner.remove();
         }
 
         // Carregar senhas
@@ -775,6 +862,7 @@
             request.onsuccess = async () => {
                 const passwords = request.result;
                 allPasswords = [];
+                let failedItems = 0;
                 
                 // Descriptografar todas as senhas
                 for (const item of passwords) {
@@ -788,8 +876,14 @@
                             timestamp: item.timestamp
                         });
                     } catch (e) {
-                        console.error('Erro ao descriptografar item:', e);
+                        failedItems++;
+                        console.warn('Item não pode ser descriptografado (chave incorreta):', item.id);
                     }
+                }
+                
+                // Alerta se houver itens que não puderam ser descriptografados
+                if (failedItems > 0) {
+                    showWarningBanner(failedItems);
                 }
                 
                 // Ordenar por título
@@ -809,6 +903,130 @@
                 
                 currentPage = 1;
                 renderPasswords();
+            };
+        }
+        
+        // Mostrar aviso sobre itens não descriptografados
+        function showWarningBanner(count) {
+            // Remover banner existente primeiro
+            const existingBanner = document.getElementById('warningBanner');
+            if (existingBanner) existingBanner.remove();
+            
+            // Só mostrar se realmente houver itens com problema
+            if (count === 0) return;
+            
+            const banner = document.createElement('div');
+            banner.id = 'warningBanner';
+            banner.style.cssText = `
+                background: rgba(255, 193, 7, 0.15);
+                border: 1px solid rgba(255, 193, 7, 0.4);
+                color: #ffc107;
+                padding: 12px 16px;
+                border-radius: 8px;
+                margin-bottom: 16px;
+                font-size: 0.9rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                animation: slideIn 0.3s ease-out;
+            `;
+            banner.innerHTML = `
+                <div>
+                    <strong>⚠️ Atenção:</strong> ${count} senha(s) não puderam ser descriptografadas. 
+                    Isso geralmente acontece quando você tem dados de testes antigos ou mudou a chave mestra.
+                    <button class="btn btn-secondary btn-small" style="margin-left: 10px; padding: 4px 12px;" onclick="showCleanupOptions()">
+                        🧹 Remover Corrompidas
+                    </button>
+                </div>
+                <button class="icon-btn" onclick="this.parentElement.remove()" style="font-size: 1.2rem;">✕</button>
+            `;
+            
+            const searchBox = document.querySelector('.search-box');
+            searchBox.parentNode.insertBefore(banner, searchBox.nextSibling);
+        }
+        
+        // Opções de limpeza
+        function showCleanupOptions() {
+            const confirmed = confirm(
+                '🧹 LIMPEZA DO BANCO DE DADOS\n\n' +
+                'Deseja remover as senhas que não podem ser descriptografadas?\n\n' +
+                '⚠️ ATENÇÃO: Esta ação é PERMANENTE!\n\n' +
+                'Apenas senhas corrompidas ou criptografadas com outra chave mestra serão removidas.\n' +
+                'Suas senhas acessíveis permanecerão intactas.\n\n' +
+                'Clique OK para continuar ou Cancelar para manter tudo como está.'
+            );
+            
+            if (confirmed) {
+                cleanupCorruptedPasswords();
+            }
+        }
+        
+        // Limpar todos os dados
+        function clearAllData() {
+            const confirmed = confirm(
+                '⚠️ ATENÇÃO: AÇÃO IRREVERSÍVEL!\n\n' +
+                'Você está prestes a APAGAR TODAS as senhas do banco de dados.\n\n' +
+                '🔴 TODOS os dados serão perdidos permanentemente!\n' +
+                '🔴 Esta ação NÃO pode ser desfeita!\n\n' +
+                '💡 Recomendação: Faça um backup (Exportar) antes de continuar.\n\n' +
+                'Deseja realmente apagar tudo?'
+            );
+            
+            if (!confirmed) return;
+            
+            const doubleConfirm = confirm(
+                '⚠️ ÚLTIMA CONFIRMAÇÃO!\n\n' +
+                'Tem ABSOLUTA CERTEZA que deseja apagar todas as senhas?\n\n' +
+                'Digite OK para confirmar.'
+            );
+            
+            if (!doubleConfirm) return;
+            
+            const transaction = db.transaction(['passwords'], 'readwrite');
+            const objectStore = transaction.objectStore('passwords');
+            const clearRequest = objectStore.clear();
+            
+            clearRequest.onsuccess = () => {
+                alert('✅ Todos os dados foram apagados com sucesso.');
+                allPasswords = [];
+                filteredPasswords = [];
+                renderPasswords();
+            };
+            
+            clearRequest.onerror = () => {
+                alert('❌ Erro ao limpar o banco de dados.');
+            };
+        }
+        
+        // Limpar senhas corrompidas
+        async function cleanupCorruptedPasswords() {
+            const transaction = db.transaction(['passwords'], 'readwrite');
+            const objectStore = transaction.objectStore('passwords');
+            const request = objectStore.getAll();
+            
+            request.onsuccess = async () => {
+                const passwords = request.result;
+                let removed = 0;
+                
+                for (const item of passwords) {
+                    try {
+                        // Tentar descriptografar
+                        await decrypt(item.title, masterKey);
+                        await decrypt(item.username, masterKey);
+                        await decrypt(item.password, masterKey);
+                    } catch (e) {
+                        // Se falhar, remover do banco
+                        const deleteTransaction = db.transaction(['passwords'], 'readwrite');
+                        const deleteStore = deleteTransaction.objectStore('passwords');
+                        deleteStore.delete(item.id);
+                        removed++;
+                    }
+                }
+                
+                setTimeout(() => {
+                    alert(`✅ Limpeza concluída!\n\n${removed} senha(s) corrompida(s) foram removidas.`);
+                    loadPasswords();
+                }, 500);
             };
         }
         
@@ -1175,7 +1393,44 @@
 
         // Inicializar ao carregar
         window.onload = async () => {
-            await initDB();
+            try {
+                // Inicializar banco de dados
+                await initDB();
+                
+                // Pequeno delay para garantir que tudo carregou
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Remover tela de loading
+                const loadingScreen = document.getElementById('loadingScreen');
+                loadingScreen.classList.add('hidden');
+                
+                // Mostrar container
+                document.querySelector('.container').classList.add('visible');
+                
+                // Focar no campo de senha
+                setTimeout(() => {
+                    document.getElementById('masterPassword').focus();
+                }, 600);
+                
+            } catch (error) {
+                console.error('Erro ao inicializar:', error);
+                
+                // Mostrar erro na tela de loading
+                const loadingScreen = document.getElementById('loadingScreen');
+                loadingScreen.innerHTML = `
+                    <div style="text-align: center; max-width: 400px; padding: 20px;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">❌</div>
+                        <div style="font-family: 'Syne', sans-serif; font-size: 1.5rem; color: #ff6b6b; margin-bottom: 10px;">
+                            Erro ao Inicializar
+                        </div>
+                        <div style="color: var(--text-secondary); margin-bottom: 20px;">
+                            Não foi possível inicializar o banco de dados. 
+                            Isso pode acontecer se o navegador não suportar IndexedDB ou se há algum problema de permissões.
+                        </div>
+                        <button class="btn" onclick="location.reload()">🔄 Tentar Novamente</button>
+                    </div>
+                `;
+            }
         };
 
         // Fechar modal ao clicar fora
